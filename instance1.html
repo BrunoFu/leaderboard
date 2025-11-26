@@ -85,6 +85,7 @@
     <h1 id="title">Leaderboard</h1>
     <p id="subtitle"></p>
     <div id="status" class="status">Loading leaderboard…</div>
+    <div id="mode-stats" class="status meta"></div>
     <table>
       <thead>
         <tr>
@@ -118,8 +119,12 @@
       '706016001': 'Instance 3',
     };
 
-    const REFRESH_MS = 5000; // 5 秒刷新一次
+    const REFRESH_MS = 30000; // 30 秒刷新一次
     const MAX_ROWS = 50;
+
+    // 只考虑 2025/11/25 EST 晚上 8 点之后的记录
+    // Supabase 使用 UTC 时间存储，因此这里转换为对应的 UTC 时间：2025-11-26 01:00:00Z
+    const CUTOFF_MS = Date.parse('2025-11-26T01:00:00Z');
 
     // 临时使用 service_role key；等你能登录 Supabase后，请改回 SUPABASE_ANON_KEY 并在数据库里加只读策略
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -127,6 +132,7 @@
     const titleEl = document.getElementById('title');
     const subtitleEl = document.getElementById('subtitle');
     const statusEl = document.getElementById('status');
+    const modeStatsEl = document.getElementById('mode-stats');
     const tbodyEl = document.getElementById('tbody');
 
     titleEl.textContent = INSTANCE_LABELS[INSTANCE_ID] || `Instance ${INSTANCE_ID} Leaderboard`;
@@ -145,6 +151,7 @@
 
     async function fetchLeaderboardOnce() {
       statusEl.textContent = 'Updating…';
+      if (modeStatsEl) modeStatsEl.textContent = '';
 
       // 1) 拉该 instance 的最近若干条 step 数据
       const { data, error } = await supabase
@@ -160,6 +167,7 @@
         statusEl.textContent = `Error loading leaderboard: ${msg}`;
         statusEl.classList.add('error');
         tbodyEl.innerHTML = '<tr><td colspan="5">Failed to load data.</td></tr>';
+        if (modeStatsEl) modeStatsEl.textContent = '';
         return;
       }
 
@@ -167,6 +175,22 @@
         tbodyEl.innerHTML = '<tr><td colspan="5">No data yet for this instance.</td></tr>';
         statusEl.textContent = 'No data yet';
         statusEl.classList.remove('error');
+        if (modeStatsEl) modeStatsEl.textContent = '';
+        return;
+      }
+
+      // 过滤掉截止时间之前的记录，只保留 cutoff 之后的记录
+      const filtered = data.filter(row => {
+        if (!row.timestamp) return false;
+        const t = Date.parse(row.timestamp);
+        return Number.isFinite(t) && t > CUTOFF_MS;
+      });
+
+      if (!filtered.length) {
+        tbodyEl.innerHTML = '<tr><td colspan="5">No data after cutoff time (2025-11-25 8pm EST).</td></tr>';
+        statusEl.textContent = 'No data after cutoff time';
+        statusEl.classList.remove('error');
+        if (modeStatsEl) modeStatsEl.textContent = '';
         return;
       }
 
@@ -186,7 +210,7 @@
 
       // 3) 按 user_uuid 聚合：取每个用户在该 instance 最新一条记录
       const latestByUser = new Map();
-      for (const row of data) {
+      for (const row of filtered) {
         const key = row.user_uuid;
         if (!latestByUser.has(key)) {
           latestByUser.set(key, row);
@@ -219,6 +243,67 @@
 
       statusEl.textContent = `Last updated at ${new Date().toLocaleTimeString()}`;
       statusEl.classList.remove('error');
+
+      // 更新各模式的均值和方差统计（只基于完成游戏的用户）
+      await updateModeStats();
+    }
+
+    async function updateModeStats() {
+      if (!modeStatsEl) return;
+      modeStatsEl.textContent = '';
+
+      // 从 game_completions 中获取已完成游戏的记录
+      const { data, error } = await supabase
+        .from('game_completions')
+        .select('mode, total_reward, timestamp')
+        .eq('instance', INSTANCE_ID)
+        .order('timestamp', { ascending: false })
+        .limit(2000);
+
+      if (error) {
+        console.warn('Failed to load game_completions for stats', error);
+        return;
+      }
+
+      if (!data || !data.length) {
+        return;
+      }
+
+      // 只保留截止时间之后完成的局
+      const filtered = data.filter(row => {
+        if (!row.timestamp) return false;
+        const t = Date.parse(row.timestamp);
+        return Number.isFinite(t) && t > CUTOFF_MS;
+      });
+
+      if (!filtered.length) {
+        return;
+      }
+
+      const byMode = new Map();
+      for (const row of filtered) {
+        const mode = row.mode || 'unknown';
+        const reward = Number(row.total_reward || 0);
+        if (!byMode.has(mode)) {
+          byMode.set(mode, { n: 0, sum: 0, sumSq: 0 });
+        }
+        const agg = byMode.get(mode);
+        agg.n += 1;
+        agg.sum += reward;
+        agg.sumSq += reward * reward;
+      }
+
+      const parts = [];
+      for (const [mode, agg] of byMode.entries()) {
+        if (agg.n === 0) continue;
+        const mean = agg.sum / agg.n;
+        const variance = agg.sumSq / agg.n - mean * mean;
+        parts.push(
+          `${mode}: n=${agg.n}, mean=${mean.toFixed(2)}, var=${variance.toFixed(2)}`
+        );
+      }
+
+      modeStatsEl.textContent = parts.join(' | ');
     }
 
     // 首次加载 + 定时轮询
