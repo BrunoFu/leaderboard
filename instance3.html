@@ -136,11 +136,15 @@
     .error {
       color: #fecaca;
     }
+    .completions-module {
+      margin-top: 32px;
+    }
     .stats-section {
       background: #1e293b;
       padding: 16px;
       border-radius: 8px;
       margin-bottom: 16px;
+      margin-top: 16px;
     }
     .stats-section h3 {
       margin: 0 0 8px;
@@ -198,31 +202,35 @@
       </tbody>
     </table>
 
-    <!-- Statistics Section (above completions table) -->
-    <div class="stats-section">
-      <h3>Overall Statistics (Completed Games)</h3>
-      <div id="mode-stats" class="stats-content">Loading statistics...</div>
-    </div>
+    <!-- Completed Games Module -->
+    <div class="completions-module">
+      <h2>Completed Games (Game Completions)</h2>
+      
+      <!-- Statistics Section (within completions module) -->
+      <div class="stats-section">
+        <h3>Overall Statistics (Completed Games)</h3>
+        <div id="mode-stats" class="stats-content">Loading statistics...</div>
+      </div>
 
-    <!-- Game Completions Table -->
-    <h2>Completed Games (Game Completions)</h2>
-    <div class="export-buttons">
-      <button id="export-completions-csv">Export Completions CSV</button>
+      <!-- Game Completions Table -->
+      <div class="export-buttons">
+        <button id="export-completions-csv">Export Completions CSV</button>
+      </div>
+      <table id="completions-table">
+        <thead>
+          <tr>
+            <th class="name">Name</th>
+            <th>Run ID</th>
+            <th>Mode</th>
+            <th>Total Reward</th>
+            <th>Completed At</th>
+          </tr>
+        </thead>
+        <tbody id="completions-tbody">
+          <!-- rows injected by JS -->
+        </tbody>
+      </table>
     </div>
-    <table id="completions-table">
-      <thead>
-        <tr>
-          <th class="name">Name</th>
-          <th>Run ID</th>
-          <th>Mode</th>
-          <th>Total Reward</th>
-          <th>Completed At</th>
-        </tr>
-      </thead>
-      <tbody id="completions-tbody">
-        <!-- rows injected by JS -->
-      </tbody>
-    </table>
   </div>
 
   <script type="module">
