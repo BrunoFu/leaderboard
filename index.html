@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Leaderboard - All Instances</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      margin: 0;
+      padding: 24px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+    h2 {
+      margin: 32px 0 16px;
+      font-size: 20px;
+      color: #e5e7eb;
+    }
+    p {
+      margin: 4px 0 16px;
+      color: #9ca3af;
+    }
+    .instance-selector {
+      background: #1e293b;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .instance-selector label {
+      color: #9ca3af;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .instance-selector select {
+      background: #020617;
+      border: 1px solid #334155;
+      color: #e5e7eb;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      min-width: 200px;
+    }
+    .instance-selector select:hover {
+      border-color: #3b82f6;
+    }
+    .instance-selector select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+    }
+    .time-controls {
+      background: #1e293b;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    .time-controls label {
+      color: #9ca3af;
+      font-size: 14px;
+      margin-right: 8px;
+    }
+    .datetime-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      background: #020617;
+      border: 1px solid #334155;
+      border-radius: 4px;
+      padding: 0;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .datetime-wrapper:hover {
+      border-color: #3b82f6;
+    }
+    .datetime-wrapper:focus-within {
+      border-color: #3b82f6;
+      outline: 2px solid rgba(59, 130, 246, 0.3);
+      outline-offset: 2px;
+    }
+    .time-controls input[type="datetime-local"] {
+      background: transparent;
+      border: none;
+      color: #e5e7eb;
+      padding: 8px 40px 8px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      min-width: 200px;
+      outline: none;
+    }
+    .time-controls input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+      opacity: 0;
+      position: absolute;
+      right: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+    .calendar-icon {
+      position: absolute;
+      right: 8px;
+      width: 20px;
+      height: 20px;
+      pointer-events: none;
+      color: #9ca3af;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .datetime-wrapper:hover .calendar-icon {
+      color: #3b82f6;
+    }
+    .time-controls select {
+      background: #020617;
+      border: 1px solid #334155;
+      color: #e5e7eb;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .time-controls button {
+      background: #3b82f6;
+      border: none;
+      color: white;
+      padding: 6px 16px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .time-controls button:hover {
+      background: #2563eb;
+    }
+    .export-buttons {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+    }
+    .export-buttons button {
+      background: #10b981;
+      border: none;
+      color: white;
+      padding: 6px 16px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .export-buttons button:hover {
+      background: #059669;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      background: #020617;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    thead {
+      background: #111827;
+    }
+    th, td {
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 14px;
+    }
+    th {
+      color: #9ca3af;
+      font-weight: 500;
+    }
+    tbody tr:nth-child(even) {
+      background: #020617;
+    }
+    tbody tr:nth-child(odd) {
+      background: #020617;
+    }
+    tbody tr:hover {
+      background: #1f2937;
+    }
+    .rank {
+      width: 40px;
+    }
+    .name {
+      width: 20%;
+    }
+    .reward {
+      font-variant-numeric: tabular-nums;
+    }
+    .status {
+      font-size: 13px;
+      margin-top: 8px;
+      color: #9ca3af;
+    }
+    .error {
+      color: #fecaca;
+    }
+    .completions-module {
+      margin-top: 32px;
+    }
+    .stats-section {
+      background: #1e293b;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      margin-top: 16px;
+    }
+    .stats-section h3 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      color: #e5e7eb;
+    }
+    .stats-content {
+      color: #9ca3af;
+      font-size: 14px;
+    }
+    .stats-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+    .stats-table th,
+    .stats-table td {
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 14px;
+      border-bottom: 1px solid #334155;
+    }
+    .stats-table th {
+      color: #9ca3af;
+      font-weight: 500;
+      background: transparent;
+    }
+    .stats-table td {
+      color: #e5e7eb;
+    }
+    .stats-table tr:last-child td {
+      border-bottom: none;
+    }
+    .stats-table .mode-col {
+      font-weight: 500;
+      color: #e5e7eb;
+    }
+    .stats-table .number-col {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 id="title">Leaderboard</h1>
+    <p id="subtitle"></p>
+    
+    <!-- Instance Selector -->
+    <div class="instance-selector">
+      <label for="instance-select">Select Instance:</label>
+      <select id="instance-select">
+        <option value="599580017">Instance 1</option>
+        <option value="568601006">Instance 2</option>
+        <option value="706016001">Instance 3</option>
+      </select>
+    </div>
+    
+    <!-- Time Range Controls -->
+    <div class="time-controls">
+      <label for="time-preset">Quick Select:</label>
+      <select id="time-preset">
+        <option value="">Custom</option>
+        <option value="1h">Last 1 hour</option>
+        <option value="6h">Last 6 hours</option>
+        <option value="24h">Last 24 hours</option>
+      </select>
+      <label for="start-time">Start Time:</label>
+      <div class="datetime-wrapper" onclick="document.getElementById('start-time').showPicker?.() || document.getElementById('start-time').click()">
+        <input type="datetime-local" id="start-time" step="3600" />
+        <svg class="calendar-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+      </div>
+      <label for="end-time">End Time:</label>
+      <div class="datetime-wrapper" onclick="document.getElementById('end-time').showPicker?.() || document.getElementById('end-time').click()">
+        <input type="datetime-local" id="end-time" step="3600" />
+        <svg class="calendar-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+      </div>
+      <button id="apply-filter">Apply Filter</button>
+    </div>
+
+    <div id="status" class="status">Loading leaderboard…</div>
+
+    <!-- Game Steps Leaderboard -->
+    <h2>Live Leaderboard (Game Steps)</h2>
+    <div class="export-buttons">
+      <button id="export-steps-csv">Export Steps CSV</button>
+    </div>
+    <table id="steps-table">
+      <thead>
+        <tr>
+          <th class="rank">#</th>
+          <th class="name">Name</th>
+          <th>Run ID</th>
+          <th>Mode</th>
+          <th>Period</th>
+          <th>Total Reward</th>
+          <th>Last Update</th>
+        </tr>
+      </thead>
+      <tbody id="steps-tbody">
+        <!-- rows injected by JS -->
+      </tbody>
+    </table>
+
+    <!-- Completed Games Module -->
+    <div class="completions-module">
+      <h2>Completed Games (Game Completions)</h2>
+      
+      <!-- Statistics Section (within completions module) -->
+      <div class="stats-section">
+        <h3>Overall Statistics (Completed Games)</h3>
+        <div id="mode-stats" class="stats-content">Loading statistics...</div>
+      </div>
+
+      <!-- Game Completions Table -->
+      <div class="export-buttons">
+        <button id="export-completions-csv">Export Completions CSV</button>
+      </div>
+      <table id="completions-table">
+        <thead>
+          <tr>
+            <th class="name">Name</th>
+            <th>Run ID</th>
+            <th>Mode</th>
+            <th>Total Reward</th>
+            <th>Completed At</th>
+          </tr>
+        </thead>
+        <tbody id="completions-tbody">
+          <!-- rows injected by JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js';
+
+    const SUPABASE_URL = 'https://bssczohwaphkwikdjhxx.supabase.co';
+    const SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzc2N6b2h3YXBoa3dpa2RqaHh4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NjQ4NDg3NywiZXhwIjoyMDYyMDYwODc3fQ.E0kb3NV2lR-j0fFyMj2GwPr9RyTcApN62w3SwpATDEk';
+
+    const INSTANCE_LABELS = {
+      '599580017': 'Instance 1',
+      '568601006': 'Instance 2',
+      '706016001': 'Instance 3',
+    };
+
+    const REFRESH_MS = 30000; // Refresh every 30 seconds
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // DOM elements
+    const titleEl = document.getElementById('title');
+    const subtitleEl = document.getElementById('subtitle');
+    const statusEl = document.getElementById('status');
+    const modeStatsEl = document.getElementById('mode-stats');
+    const stepsTbodyEl = document.getElementById('steps-tbody');
+    const completionsTbodyEl = document.getElementById('completions-tbody');
+    const timePresetEl = document.getElementById('time-preset');
+    const startTimeEl = document.getElementById('start-time');
+    const endTimeEl = document.getElementById('end-time');
+    const applyFilterBtn = document.getElementById('apply-filter');
+    const exportStepsBtn = document.getElementById('export-steps-csv');
+    const exportCompletionsBtn = document.getElementById('export-completions-csv');
+    const instanceSelectEl = document.getElementById('instance-select');
+
+    // State
+    let currentInstanceId = instanceSelectEl.value;
+    let currentStepsData = [];
+    let currentCompletionsData = [];
+    let selectedStartTime = null;
+    let selectedEndTime = null;
+    let refreshInterval = null;
+
+    function updateTitle() {
+      titleEl.textContent = INSTANCE_LABELS[currentInstanceId] || `Instance ${currentInstanceId} Leaderboard`;
+      subtitleEl.textContent = 'Select a time period to filter data.';
+    }
+
+    function formatNumber(x) {
+      const n = Number(x || 0);
+      return n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+    }
+
+    function formatTime(ts) {
+      if (!ts) return '';
+      const d = new Date(ts);
+      return d.toLocaleString('en-US');
+    }
+
+    function formatDateTimeLocal(ts) {
+      if (!ts) return '';
+      const d = new Date(ts);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const hours = String(d.getHours()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:00`;
+    }
+
+    function parseDateTimeLocal(value) {
+      if (!value) return null;
+      return new Date(value).toISOString();
+    }
+
+    function setupTimePreset() {
+      timePresetEl.addEventListener('change', (e) => {
+        const preset = e.target.value;
+        if (!preset) return;
+
+        const now = new Date();
+        let start = new Date(now);
+
+        switch (preset) {
+          case '1h':
+            start.setHours(start.getHours() - 1);
+            break;
+          case '6h':
+            start.setHours(start.getHours() - 6);
+            break;
+          case '24h':
+            start.setHours(start.getHours() - 24);
+            break;
+        }
+
+        startTimeEl.value = formatDateTimeLocal(start);
+        endTimeEl.value = formatDateTimeLocal(now);
+        applyFilter();
+      });
+    }
+
+    function applyFilter() {
+      selectedStartTime = parseDateTimeLocal(startTimeEl.value);
+      selectedEndTime = parseDateTimeLocal(endTimeEl.value);
+      fetchAllData();
+    }
+
+    async function fetchAllData() {
+      statusEl.textContent = 'Updating…';
+      modeStatsEl.textContent = 'Loading statistics...';
+
+      // Build query filters
+      let stepsQuery = supabase
+        .from('game_steps')
+        .select('user_uuid, user_index, instance, mode, period, total_reward, run_id, timestamp')
+        .eq('instance', currentInstanceId);
+
+      let completionsQuery = supabase
+        .from('game_completions')
+        .select('user_uuid, user_index, instance, mode, total_reward, run_id, timestamp')
+        .eq('instance', currentInstanceId);
+
+      // Apply time filters if provided
+      if (selectedStartTime) {
+        stepsQuery = stepsQuery.gte('timestamp', selectedStartTime);
+        completionsQuery = completionsQuery.gte('timestamp', selectedStartTime);
+      }
+      if (selectedEndTime) {
+        stepsQuery = stepsQuery.lte('timestamp', selectedEndTime);
+        completionsQuery = completionsQuery.lte('timestamp', selectedEndTime);
+      }
+
+      stepsQuery = stepsQuery.order('timestamp', { ascending: false }).limit(5000);
+      completionsQuery = completionsQuery.order('timestamp', { ascending: false }).limit(5000);
+
+      // Fetch user names
+      const { data: userRows } = await supabase
+        .from('or_agent_users')
+        .select('uuid, name, index');
+
+      const nameByUuid = new Map();
+      (userRows || []).forEach(row => {
+        nameByUuid.set(row.uuid, row.name || `User #${row.index}`);
+      });
+
+      // Fetch game steps
+      const { data: stepsData, error: stepsError } = await stepsQuery;
+
+      if (stepsError) {
+        console.error('Error loading game_steps', stepsError);
+        statusEl.textContent = `Error: ${stepsError.message}`;
+        statusEl.classList.add('error');
+        return;
+      }
+
+      // Fetch game completions
+      const { data: completionsData, error: completionsError } = await completionsQuery;
+
+      if (completionsError) {
+        console.error('Error loading game_completions', completionsError);
+        statusEl.textContent = `Error: ${completionsError.message}`;
+        statusEl.classList.add('error');
+        return;
+      }
+
+      // Process game steps: get latest record per user
+      const latestByUser = new Map();
+      (stepsData || []).forEach(row => {
+        const key = row.user_uuid;
+        if (!latestByUser.has(key) || new Date(row.timestamp) > new Date(latestByUser.get(key).timestamp)) {
+          latestByUser.set(key, {
+            ...row,
+            displayName: nameByUuid.get(row.user_uuid) || (row.user_index != null ? `User #${row.user_index}` : 'Unknown user')
+          });
+        }
+      });
+
+      let stepsRows = Array.from(latestByUser.values());
+      stepsRows.sort((a, b) => Number(b.total_reward || 0) - Number(a.total_reward || 0));
+      currentStepsData = stepsRows;
+
+      // Process completions
+      let completionsRows = (completionsData || []).map(row => ({
+        ...row,
+        displayName: nameByUuid.get(row.user_uuid) || (row.user_index != null ? `User #${row.user_index}` : 'Unknown user')
+      }));
+      completionsRows.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      currentCompletionsData = completionsRows;
+
+      // Render tables
+      renderStepsTable(stepsRows);
+      renderCompletionsTable(completionsRows);
+      updateModeStats(completionsRows);
+
+      statusEl.textContent = `Last updated at ${new Date().toLocaleTimeString('en-US')}`;
+      statusEl.classList.remove('error');
+    }
+
+    function renderStepsTable(rows) {
+      if (!rows || rows.length === 0) {
+        stepsTbodyEl.innerHTML = '<tr><td colspan="7">No data for selected time period.</td></tr>';
+        return;
+      }
+
+      stepsTbodyEl.innerHTML = rows.map((row, idx) => {
+        const displayName = row.displayName || 
+          (row.user_index != null ? `User #${row.user_index}` : 'Unknown user');
+        const reward = formatNumber(row.total_reward);
+        const mode = row.mode || '';
+        const period = row.period != null ? row.period : '';
+        const runId = row.run_id ? row.run_id.substring(0, 8) + '...' : '';
+        const time = formatTime(row.timestamp);
+
+        return `
+          <tr>
+            <td class="rank">${idx + 1}</td>
+            <td class="name">${displayName}</td>
+            <td>${runId}</td>
+            <td>${mode}</td>
+            <td>${period}</td>
+            <td class="reward">${reward}</td>
+            <td>${time}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderCompletionsTable(rows) {
+      if (!rows || rows.length === 0) {
+        completionsTbodyEl.innerHTML = '<tr><td colspan="5">No completed games for selected time period.</td></tr>';
+        return;
+      }
+
+      completionsTbodyEl.innerHTML = rows.map(row => {
+        const reward = formatNumber(row.total_reward);
+        const mode = row.mode || '';
+        const runId = row.run_id ? row.run_id.substring(0, 8) + '...' : '';
+        const time = formatTime(row.timestamp);
+
+        return `
+          <tr>
+            <td class="name">${row.displayName}</td>
+            <td>${runId}</td>
+            <td>${mode}</td>
+            <td class="reward">${reward}</td>
+            <td>${time}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function updateModeStats(completionsRows) {
+      if (!modeStatsEl) return;
+      if (!completionsRows || completionsRows.length === 0) {
+        modeStatsEl.innerHTML = '<p>No completed games for statistics.</p>';
+        return;
+      }
+
+      const byMode = new Map();
+      for (const row of completionsRows) {
+        const mode = row.mode || 'unknown';
+        const reward = Number(row.total_reward || 0);
+        if (!byMode.has(mode)) {
+          byMode.set(mode, { n: 0, sum: 0, sumSq: 0 });
+        }
+        const agg = byMode.get(mode);
+        agg.n += 1;
+        agg.sum += reward;
+        agg.sumSq += reward * reward;
+      }
+
+      // Convert to array and sort by mode (A, B, C order)
+      const modeStats = [];
+      for (const [mode, agg] of byMode.entries()) {
+        if (agg.n === 0) continue; // Skip modes with no data
+        const mean = agg.sum / agg.n;
+        const variance = agg.sumSq / agg.n - mean * mean;
+        modeStats.push({
+          mode: mode,
+          n: agg.n,
+          mean: mean,
+          variance: variance
+        });
+      }
+
+      // Sort by mode (A, B, C order)
+      modeStats.sort((a, b) => {
+        if (a.mode < b.mode) return -1;
+        if (a.mode > b.mode) return 1;
+        return 0;
+      });
+
+      if (modeStats.length === 0) {
+        modeStatsEl.innerHTML = '<p>No statistics available.</p>';
+        return;
+      }
+
+      // Generate table HTML
+      const tableHTML = `
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th class="mode-col">Mode</th>
+              <th class="number-col">Count (n)</th>
+              <th class="number-col">Mean</th>
+              <th class="number-col">Variance</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${modeStats.map(stat => `
+              <tr>
+                <td class="mode-col">${stat.mode}</td>
+                <td class="number-col">${stat.n}</td>
+                <td class="number-col">${formatNumber(stat.mean)}</td>
+                <td class="number-col">${formatNumber(stat.variance)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+
+      modeStatsEl.innerHTML = tableHTML;
+    }
+
+    function exportToCSV(data, filename, headers, getRowData) {
+      const csvRows = [];
+      csvRows.push(headers.join(','));
+      
+      data.forEach((row, idx) => {
+        const values = getRowData(row, idx).map(v => {
+          if (v == null) return '';
+          const str = String(v);
+          return str.includes(',') || str.includes('"') || str.includes('\n') 
+            ? `"${str.replace(/"/g, '""')}"` 
+            : str;
+        });
+        csvRows.push(values.join(','));
+      });
+
+      const csvContent = csvRows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+    }
+
+    function changeInstance() {
+      currentInstanceId = instanceSelectEl.value;
+      updateTitle();
+      // Reset time filters when changing instance
+      selectedStartTime = null;
+      selectedEndTime = null;
+      startTimeEl.value = '';
+      endTimeEl.value = '';
+      timePresetEl.value = '';
+      fetchAllData();
+    }
+
+    // Event listeners
+    instanceSelectEl.addEventListener('change', changeInstance);
+    applyFilterBtn.addEventListener('click', applyFilter);
+    
+    exportStepsBtn.addEventListener('click', () => {
+      if (currentStepsData.length === 0) {
+        alert('No data to export.');
+        return;
+      }
+      exportToCSV(
+        currentStepsData,
+        `instance${currentInstanceId}_steps_${new Date().toISOString().split('T')[0]}.csv`,
+        ['Rank', 'Name', 'Run ID', 'Mode', 'Period', 'Total Reward', 'Last Update'],
+        (row, idx) => [
+          idx + 1,
+          row.displayName || (row.user_index != null ? `User #${row.user_index}` : 'Unknown user'),
+          row.run_id || '',
+          row.mode || '',
+          row.period != null ? row.period : '',
+          row.total_reward || 0,
+          row.timestamp || ''
+        ]
+      );
+    });
+
+    exportCompletionsBtn.addEventListener('click', () => {
+      if (currentCompletionsData.length === 0) {
+        alert('No data to export.');
+        return;
+      }
+      exportToCSV(
+        currentCompletionsData,
+        `instance${currentInstanceId}_completions_${new Date().toISOString().split('T')[0]}.csv`,
+        ['Name', 'Run ID', 'Mode', 'Total Reward', 'Completed At'],
+        (row) => [
+          row.displayName,
+          row.run_id || '',
+          row.mode || '',
+          row.total_reward || 0,
+          row.timestamp || ''
+        ]
+      );
+    });
+
+    setupTimePreset();
+    updateTitle();
+
+    // Initial load (no filter)
+    fetchAllData();
+    refreshInterval = setInterval(fetchAllData, REFRESH_MS);
+  </script>
+</body>
+</html>
+
