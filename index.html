@@ -526,20 +526,17 @@
         return;
       }
 
-      // Process game steps: get latest record per user
-      const latestByUser = new Map();
-      (stepsData || []).forEach(row => {
-        const key = row.user_uuid;
-        if (!latestByUser.has(key) || new Date(row.timestamp) > new Date(latestByUser.get(key).timestamp)) {
-          latestByUser.set(key, {
-            ...row,
-            displayName: nameByUuid.get(row.user_uuid) || (row.user_index != null ? `User #${row.user_index}` : 'Unknown user')
-          });
-        }
+      // Process game steps: show all records (no merging)
+      let stepsRows = (stepsData || []).map(row => ({
+        ...row,
+        displayName: nameByUuid.get(row.user_uuid) || (row.user_index != null ? `User #${row.user_index}` : 'Unknown user')
+      }));
+      // Sort by total_reward descending (for ranking), then by timestamp descending (most recent first)
+      stepsRows.sort((a, b) => {
+        const rewardDiff = Number(b.total_reward || 0) - Number(a.total_reward || 0);
+        if (rewardDiff !== 0) return rewardDiff;
+        return new Date(b.timestamp) - new Date(a.timestamp);
       });
-
-      let stepsRows = Array.from(latestByUser.values());
-      stepsRows.sort((a, b) => Number(b.total_reward || 0) - Number(a.total_reward || 0));
       currentStepsData = stepsRows;
 
       // Process completions
