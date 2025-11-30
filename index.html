@@ -526,11 +526,21 @@
         return;
       }
 
-      // Process game steps: show all records (no merging)
-      let stepsRows = (stepsData || []).map(row => ({
-        ...row,
-        displayName: nameByUuid.get(row.user_uuid) || (row.user_index != null ? `User #${row.user_index}` : 'Unknown user')
-      }));
+      // Process game steps: keep only the latest step for each unique run_id
+      const latestByRunId = new Map();
+      (stepsData || []).forEach(row => {
+        const runId = row.run_id;
+        if (!runId) return; // Skip rows without run_id
+        
+        if (!latestByRunId.has(runId) || new Date(row.timestamp) > new Date(latestByRunId.get(runId).timestamp)) {
+          latestByRunId.set(runId, {
+            ...row,
+            displayName: nameByUuid.get(row.user_uuid) || (row.user_index != null ? `User #${row.user_index}` : 'Unknown user')
+          });
+        }
+      });
+
+      let stepsRows = Array.from(latestByRunId.values());
       // Sort by total_reward descending (for ranking), then by timestamp descending (most recent first)
       stepsRows.sort((a, b) => {
         const rewardDiff = Number(b.total_reward || 0) - Number(a.total_reward || 0);
